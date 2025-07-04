@@ -1,6 +1,7 @@
 import YouTube from "react-youtube";
 import { useEffect, useState } from "react";
-import {getMovieVideos, fetchGenres, fetchMoviesReviews, fetchMovieCredits, fetchMovieDetails} from "../api/api.ts";
+import {getMovieVideos, fetchGenres, fetchMoviesReviews, fetchMovieCredits, fetchMovieDetails, fetchRecommendedMovies, fetchSimilarMovies} from "../api/api.ts";
+import PersonModal from "./PersonModal.tsx";
 
 export default function MovieModal({ movie, onClose }) {
     const [trailer, setTrailer] = useState(null);
@@ -12,6 +13,9 @@ export default function MovieModal({ movie, onClose }) {
     const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
     const [credits, setCredits] = useState({ cast: [], crew: [] });
     const [fullMovieDetails, setFullMovieDetails] = useState(null);
+    const [selectedPersonId, setSelectedPersonId] = useState(null);
+    const [recommendedMovies, setRecommendedMovies] = useState([]);
+    const [similarMovie, setSimilarMovie] = useState([]);
 
     useEffect(() => {
         const fetchTrailer = async () => {
@@ -61,6 +65,22 @@ export default function MovieModal({ movie, onClose }) {
         day: "numeric",
     });
 
+    useEffect(() => {
+        const loadRecommended = async () => {
+            const data = await fetchRecommendedMovies(movie.id);
+            setRecommendedMovies(data.results.slice(0, 15));
+        };
+        loadRecommended()
+    }, [movie]);
+
+    useEffect(() => {
+        const loadSimilar = async () => {
+            const data = await fetchSimilarMovies(movie.id);
+            setSimilarMovie(data.results.slice(0, 15));
+        }
+        loadSimilar()
+    }, [movie]);
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 overflow-auto">
             <div className="bg-white rounded-lg w-full max-w-3xl max-h-[500px] overflow-y-auto relative p-4 md:p-6">
@@ -73,7 +93,7 @@ export default function MovieModal({ movie, onClose }) {
                 </button>
 
                 <div className={"flex gap-4 mb-4 border-b pb-2"}>
-                    {["Details", "Trailer", "Reviews", "Cast & Crew"].map((t) => (
+                    {["Details", "Trailer", "Reviews", "Cast & Crew", "Recommended", "Similar Movies"].map((t) => (
                         <button
                         key={t}
                         onClick={() => setTab(t)}
@@ -93,7 +113,7 @@ export default function MovieModal({ movie, onClose }) {
                                 : "https://via.placeholder.com/342x513?text=No+Image"
                         }
                         alt={movie.title}
-                        className="w-full md:w-[200px] rounded shadow-md object-cover"
+                        className="w-[150px] h-[225px] rounded object-cover shadow-md"
                     />
 
                     <div className="flex-1">
@@ -281,7 +301,7 @@ export default function MovieModal({ movie, onClose }) {
                                             alt={actor.name}
                                             className={"w-full h-48 object-cover rounded mb-1"}
                                         />
-                                        <p className={"font-medium text-sm"}>{actor.name}</p>
+                                        <p className={"font-medium text-sm cursor-pointer text-blue-600 hover:underline"} onClick={() => setSelectedPersonId(actor.id)}>{actor.name}</p>
                                         <p className={"text-xs text-gray-500"}>as  {actor.character}</p>
                                     </div>
                                 ))}
@@ -303,6 +323,40 @@ export default function MovieModal({ movie, onClose }) {
                                 </ul>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {selectedPersonId && <PersonModal personId={selectedPersonId} onClose={() => setSelectedPersonId(null)} />}
+
+                {tab === "Recommended" && (
+                    <div className={"grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"}>
+                        {recommendedMovies.map((movie) => (
+                            <div key={movie.id} className={"text-center"}>
+                                <img
+                                    src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
+                                    alt={movie.title}
+                                    className="w-[150px] h-[225px] rounded object-cover shrink-0 mb-1"
+                                />
+                                <p className={"font-medium text-sm"}>{movie.title}</p>
+                                <p className={"text-xs text-gray-500"}>{new Date(movie.release_date).getFullYear()}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {tab === "Similar Movies" && (
+                    <div className={"grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"}>
+                        {similarMovie.map((movie) => (
+                            <div key={movie.id} className={"text-center"}>
+                                <img
+                                    src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
+                                    alt={movie.title}
+                                    className="w-[150px] h-[225px] rounded object-cover shrink-0 mb-1"
+                                />
+                                <p className={"font-medium text-sm"}>{movie.title}</p>
+                                <p className={"text-xs text-gray-500"}>{new Date(movie.release_date).getFullYear()}</p>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

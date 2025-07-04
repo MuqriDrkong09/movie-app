@@ -61,3 +61,23 @@ export async function fetchMovieDetails(movieId: number) {
     const res = await fetch(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&language=en-US`);
     return await res.json();
 }
+
+export const fetchPersonDetails = async (personId) => {
+    const res = await fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${API_KEY}`);
+    return res.json();
+}
+
+export const fetchPersonMovies = async (personId) => {
+    const res = await fetch(`https://api.themoviedb.org/3/person/${personId}/movie_credits?api_key=${API_KEY}`);
+    return res.json();
+}
+
+export const fetchSimilarMovies = async (movieId) => {
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/similar?api_key=${API_KEY}`);
+    return res.json();
+};
+
+export const fetchRecommendedMovies = async (movieId) => {
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/recommendations?api_key=${API_KEY}`);
+    return res.json();
+};
