@@ -1,6 +1,6 @@
 import YouTube from "react-youtube";
 import { useEffect, useState } from "react";
-import { getMovieVideos, fetchGenres, fetchMoviesReviews } from "../api/api.ts";
+import {getMovieVideos, fetchGenres, fetchMoviesReviews, fetchMovieCredits, fetchMovieDetails} from "../api/api.ts";
 
 export default function MovieModal({ movie, onClose }) {
     const [trailer, setTrailer] = useState(null);
@@ -10,6 +10,8 @@ export default function MovieModal({ movie, onClose }) {
     const [showAllReviews, setShowAllReviews] = useState(false);
     const [totalReviews, setTotalReviews] = useState(0);
     const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+    const [credits, setCredits] = useState({ cast: [], crew: [] });
+    const [fullMovieDetails, setFullMovieDetails] = useState(null);
 
     useEffect(() => {
         const fetchTrailer = async () => {
@@ -36,6 +38,23 @@ export default function MovieModal({ movie, onClose }) {
         setTab("Details");
     }, [movie]);
 
+    useEffect(() => {
+        const loadCredits = async () => {
+            const data = await fetchMovieCredits(movie.id);
+            setCredits({ cast: data.cast.slice(0, 10), crew: data.crew });
+        };
+
+        loadCredits();
+    }, [movie]);
+
+    useEffect(() => {
+        const fetchMovieData = async () => {
+            const details = await fetchMovieDetails(movie.id);
+            setFullMovieDetails(details);
+        }
+        fetchMovieData();
+    }, [movie]);
+
     const formattedDate = new Date(movie.release_date).toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
@@ -54,7 +73,7 @@ export default function MovieModal({ movie, onClose }) {
                 </button>
 
                 <div className={"flex gap-4 mb-4 border-b pb-2"}>
-                    {["Details", "Trailer", "Reviews"].map((t) => (
+                    {["Details", "Trailer", "Reviews", "Cast & Crew"].map((t) => (
                         <button
                         key={t}
                         onClick={() => setTab(t)}
@@ -83,12 +102,74 @@ export default function MovieModal({ movie, onClose }) {
 
                         <div className="text-sm text-gray-600 space-y-1">
                             <p><strong>Release Date:</strong> {formattedDate}</p>
+                            {fullMovieDetails?.production_countries?.length > 0 && (
+                                <p>
+                                    <strong>Countries:</strong> {fullMovieDetails.production_countries.map((c) => c.name).join(", ")}
+                                </p>
+                            )}
                             <p><strong>Rating:</strong> ⭐ {movie.vote_average} ({movie.vote_count} votes)</p>
                             <p><strong>Language:</strong> {movie.original_language.toUpperCase()}</p>
+                            {fullMovieDetails?.runtime && (
+                                <p>
+                                    <strong>Runtime:</strong> {Math.floor(fullMovieDetails.runtime / 60)}h {fullMovieDetails.runtime % 60}m
+                                </p>
+                            )}
+                            {fullMovieDetails?.budget > 0 && (
+                                <p>
+                                    <strong>Budget:</strong> ${fullMovieDetails.budget.toLocaleString()}
+                                </p>
+                            )}
+
+                            {fullMovieDetails?.revenue > 0 && (
+                                <p>
+                                    <strong>Revenue:</strong> ${fullMovieDetails.revenue.toLocaleString()}
+                                </p>
+                            )}
                             <p>
                                 <strong>Genres:</strong> {movie.genre_ids.map(id => genreMap[id]).filter(Boolean).join(", ")}
                             </p>
+                            {fullMovieDetails?.tagline && (
+                                <p className="italic text-gray-600 mb-3">"{fullMovieDetails.tagline}"</p>
+                            )}
                         </div>
+
+                        {fullMovieDetails?.homepage && (
+                            <p>
+                                <strong>Website:</strong>{" "}
+                                <a
+                                    href={fullMovieDetails.homepage}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                >
+                                    {fullMovieDetails.homepage}
+                                </a>
+                            </p>
+                        )}
+
+                        {fullMovieDetails?.production_companies?.length > 0 && (
+                            <div className="mt-6">
+                                <h3 className="text-lg font-semibold mb-2 border-b pb-1 text-gray-800">Production Companies</h3>
+                                <ul className="space-y-3">
+                                    {fullMovieDetails.production_companies.map((company) => (
+                                        <li key={company.id} className="flex items-center">
+                                            {company.logo_path ? (
+                                                <img
+                                                    src={`https://image.tmdb.org/t/p/w92${company.logo_path}`}
+                                                    alt={company.name}
+                                                    className="h-8 object-contain mr-3"
+                                                />
+                                            ) : (
+                                                <div className="h-8 w-8 bg-gray-300 rounded mr-3 flex items-center justify-center text-xs text-gray-600">
+                                                    N/A
+                                                </div>
+                                            )}
+                                            <span className="text-sm text-gray-800">{company.name}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 </div>
                 )}
@@ -172,6 +253,56 @@ export default function MovieModal({ movie, onClose }) {
                                 )}
                             </>
                         )}
+                    </div>
+                )}
+
+                {tab === "Cast & Crew" && (
+                    <div className={"space-y-6"}>
+                        <div>
+                            <h3 className={"text-lg font-semibold"}>Director</h3>
+                            <p>
+                                {
+                                    credits.crew.find((p) => p.job === "Director")?.name || "Not listed"
+                                }
+                            </p>
+                        </div>
+
+                        <div>
+                            <h3 className="text-lg font-semibold mb-2">Top Cast</h3>
+                            <div className={"grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"}>
+                                {credits.cast.map((actor) => (
+                                    <div key={actor.id} className={"text-center"}>
+                                        <img
+                                            src={
+                                                actor.profile_path
+                                                    ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
+                                                    : "https://via.placeholder.com/185x278?text=No+Image"
+                                            }
+                                            alt={actor.name}
+                                            className={"w-full h-48 object-cover rounded mb-1"}
+                                        />
+                                        <p className={"font-medium text-sm"}>{actor.name}</p>
+                                        <p className={"text-xs text-gray-500"}>as  {actor.character}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-semibold mt-2">Key Crew</h3>
+                                <ul className="space-y-1 text-sm text-gray-700">
+                                    {["Director", "Producer", "Writer", "Composer"].map((role) => {
+                                        const people = credits.crew.filter((p) => p.job === role);
+                                        return (
+                                            people.length > 0 && (
+                                                <li key={role}>
+                                                    <strong>{role}:</strong> {people.map((p) => p.name).join(", ")}
+                                                </li>
+                                            )
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

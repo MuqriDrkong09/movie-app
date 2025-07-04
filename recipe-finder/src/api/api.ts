@@ -51,3 +51,13 @@ export const fetchTopRatedMovies = async (page = 1) => {
     const res = await fetch(`${BASE_URL}/movie/top_rated?api_key=${API_KEY}&page=${page}`);
     return await res.json();
 }
+
+export const fetchMovieCredits = async (movieId) => {
+    const res = await fetch(`${BASE_URL}/movie/${movieId}/credits?api_key=${API_KEY}`);
+    return res.json();
+}
+
+export async function fetchMovieDetails(movieId: number) {
+    const res = await fetch(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&language=en-US`);
+    return await res.json();
+}
