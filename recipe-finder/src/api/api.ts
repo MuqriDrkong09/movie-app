@@ -37,3 +37,17 @@ export const fetchMoviesReviews = async (movieId) => {
     return data;
 }
 
+export const fetchNowPlayingMovies = async (page = 1) => {
+    const res = await fetch(`${BASE_URL}/movie/now_playing?api_key=${API_KEY}&page=${page}`);
+    return await res.json();
+}
+
+export const fetchUpcomingMovies = async (page = 1) => {
+    const res = await fetch(`${BASE_URL}/movie/upcoming?api_key=${API_KEY}&page=${page}`);
+    return await res.json();
+}
+
+export const fetchTopRatedMovies = async (page = 1) => {
+    const res = await fetch(`${BASE_URL}/movie/top_rated?api_key=${API_KEY}&page=${page}`);
+    return await res.json();
+}

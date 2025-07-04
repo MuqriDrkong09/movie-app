@@ -7,13 +7,14 @@ import {searchMovies} from "./api/api.ts";
 import FilterBar from "./components/FilterBar.tsx";
 import {fetchMoviesByGenreOrYear} from "./api/api.ts";
 import MovieModal from "./components/MovieModal.tsx";
+import MovieTabs from "./components/MoviesTab.tsx";
 
 function App() {
     const [movies, setMovies] = useState([]);
     const [selectedMovies, setSelectedMovies] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [mode, setMode] = useState("trending");
+    const [mode, setMode] = useState("tabs");
     const [query, setQuery] = useState("");
     const [filter, setFilter] = useState({ genreId: "", year: "" });
     const [showFilter, setShowFilter] = useState(false);
@@ -59,7 +60,7 @@ function App() {
 
     const handleClearFilter = () => {
         setFilter({ genreId: "", year: "" });
-        setMode("trending");
+        setMode("tabs");
         setCurrentPage(1);
         setShowFilter(false);
     };
@@ -74,90 +75,108 @@ function App() {
 
           <div className="text-center mb-6">
               <button
-                  onClick={() => setShowFilter((prev) => !prev)}
+                  onClick={() => {
+                      setShowFilter((prev) => !prev);
+                      setMode("filter"); // make sure to switch mode to filter
+                  }}
                   className="px-4 py-2 bg-purple-500 text-white  rounded hover:bg-purple-600 "
               >
                   {showFilter ? "Hide Filter" : "Show Filter"}
               </button>
           </div>
 
+          {mode === "tabs" && (
+              <MovieTabs onSelectMovie={(movie) => setSelectedMovies(movie)} />
+          )}
+
           {showFilter && <FilterBar onFilter={handleFilter} onClear={handleClearFilter} />}
-          <h1 className="text-3xl font-bold text-center mb-8">🎬 Trending Movies</h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {movies.map(movie => (
-                  <MovieCard key={movie.id} movie={movie} onClick={() => setSelectedMovies(movie)} />
-              ))}
-          </div>
+
+          {["search", "filter", "trending"].includes(mode) && (
+              <>
+                  <h1 className="text-3xl font-bold text-center mb-8">
+                      {mode === "search" ? "🔍 Search Results" :
+                          mode === "filter" ? "🎯 Filtered Movies" :
+                              "🎬 Trending Movies"}
+                  </h1>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {movies.map(movie => (
+                          <MovieCard key={movie.id} movie={movie} onClick={() => setSelectedMovies(movie)} />
+                      ))}
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex justify-center mt-8 gap-1 flex-wrap">
+                      <button
+                          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                          Prev
+                      </button>
+
+                      {currentPage > 3 && (
+                          <>
+                              <button
+                                  onClick={() => setCurrentPage(1)}
+                                  className="px-3 py-1 bg-white border border-blue-500 text-blue-500 rounded"
+                              >
+                                  1
+                              </button>
+                              {currentPage > 4 && <span className="px-2 text-gray-500">...</span>}
+                          </>
+                      )}
+
+                      {Array.from({ length: 5 }, (_, i) => {
+                          const page =
+                              currentPage <= 3
+                                  ? i + 1
+                                  : currentPage >= totalPages - 2
+                                      ? totalPages - 4 + i
+                                      : currentPage - 2 + i;
+
+                          if (page < 1 || page > totalPages) return null;
+
+                          return (
+                              <button
+                                  key={page}
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`px-3 py-1 rounded ${
+                                      currentPage === page
+                                          ? "bg-blue-700 text-white"
+                                          : "bg-white border border-blue-500 text-blue-500"
+                                  }`}
+                              >
+                                  {page}
+                              </button>
+                          );
+                      })}
+
+                      {currentPage < totalPages - 2 && (
+                          <>
+                              {currentPage < totalPages - 3 && (
+                                  <span className="px-2 text-gray-500">...</span>
+                              )}
+                              <button
+                                  onClick={() => setCurrentPage(totalPages)}
+                                  className="px-3 py-1 bg-white border border-blue-500 text-blue-500 rounded"
+                              >
+                                  {totalPages}
+                              </button>
+                          </>
+                      )}
+
+                      <button
+                          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                          Next
+                      </button>
+                  </div>
+              </>
+          )}
 
           {selectedMovies && <MovieModal onClose={() => setSelectedMovies(null)} movie={selectedMovies} /> }
-
-          <div className="flex justify-center mt-8 gap-1 flex-wrap">
-              <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                  Prev
-              </button>
-
-              {currentPage > 3 && (
-                  <>
-                      <button
-                          onClick={() => setCurrentPage(1)}
-                          className="px-3 py-1 bg-white border border-blue-500 text-blue-500 rounded"
-                      >
-                          1
-                      </button>
-                      {currentPage > 4 && <span className="px-2 text-gray-500">...</span>}
-                  </>
-              )}
-
-              {Array.from({ length: 5 }, (_, i) => {
-                  const page = currentPage <= 3
-                      ? i + 1
-                      : currentPage >= totalPages - 2
-                          ? totalPages - 4 + i
-                          : currentPage - 2 + i;
-
-                  if (page < 1 || page > totalPages) return null;
-
-                  return (
-                      <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`px-3 py-1 rounded ${
-                              currentPage === page
-                                  ? "bg-blue-700 text-white"
-                                  : "bg-white border border-blue-500 text-blue-500"
-                          }`}
-                      >
-                          {page}
-                      </button>
-                  );
-              })}
-
-              {currentPage < totalPages - 2 && (
-                  <>
-                      {currentPage < totalPages - 3 && (
-                          <span className="px-2 text-gray-500">...</span>
-                      )}
-                      <button
-                          onClick={() => setCurrentPage(totalPages)}
-                          className="px-3 py-1 bg-white border border-blue-500 text-blue-500 rounded"
-                      >
-                          {totalPages}
-                      </button>
-                  </>
-              )}
-
-              <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                  Next
-              </button>
-          </div>
       </div>
   )
 }
