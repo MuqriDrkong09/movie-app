@@ -3,14 +3,12 @@ const BASE_URL = 'https://api.themoviedb.org/3';
 
 export const fetchTrendingMovies = async (page = 1) => {
     const res = await fetch(`${BASE_URL}/trending/movie/week?api_key=${API_KEY}&page=${page}`);
-    const data = await res.json();
-    return data;
+    return await res.json();
 };
 
 export const searchMovies = async (query, page = 1) => {
     const res = await fetch(`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}&page=${page}`);
-    const data = await res.json();
-    return data;
+    return await res.json();
 }
 
 export const getMovieVideos = async (movieId) => {
@@ -27,14 +25,12 @@ export const fetchGenres = async () => {
 
 export const fetchMoviesByGenreOrYear = async (genreId, year, page = 1) => {
     const res = await fetch(`${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=${genreId}&primary_release_year=${year}&page=${page}`);
-    const data = await res.json();
-    return data;
+    return await res.json();
 };
 
 export const fetchMoviesReviews = async (movieId) => {
     const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/reviews?api_key=${API_KEY}`);
-    const data = await res.json();
-    return data;
+    return await res.json();
 }
 
 export const fetchNowPlayingMovies = async (page = 1) => {
