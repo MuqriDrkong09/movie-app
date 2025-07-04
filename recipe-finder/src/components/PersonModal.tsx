@@ -46,7 +46,7 @@ export default function PersonModal({ personId, onClose}) {
                             <div key={movie.id}>
                                 <img
                                     src={movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : "https://via.placeholder.com/185x278?text=No+Image"}
-                                    className="w-[150px] h-[225px] rounded object-cover shrink-0"
+                                    className="w-[150px] h-[225px] rounded object-cover shrink-0" alt={movie.title}
                                 />
                                 <p className={"text-sm mt-1 text-center"}>{movie.title}</p>
                             </div>
