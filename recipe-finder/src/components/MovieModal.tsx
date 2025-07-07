@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {getMovieVideos, fetchGenres, fetchMoviesReviews, fetchMovieCredits, fetchMovieDetails, fetchRecommendedMovies, fetchSimilarMovies} from "../api/api.ts";
 import PersonModal from "./PersonModal.tsx";
 import SecondaryMovieModal from "./SecondaryMovieModal.tsx";
+import Pagination from "./pagination.tsx";
 
 export default function MovieModal({ movie, onClose }) {
     const [trailer, setTrailer] = useState(null);
@@ -19,6 +20,10 @@ export default function MovieModal({ movie, onClose }) {
     const [similarMovie, setSimilarMovie] = useState([]);
     const [relatedToggle, setRelatedToggle] = useState<"recommended" | "similar">("recommended");
     const [seconddaryMovies, setSeconddaryMovies] = useState(null);
+    const [recommendedPages, setRecommendedPages] = useState(1);
+    const [recomendedTotalPages, setRecomendedTotalPages] = useState(1);
+    const [similarPages, setSimilarPages] = useState(1);
+    const [similarTotalPages, setSimilarTotalPages] = useState(1);
 
     useEffect(() => {
         const fetchTrailer = async () => {
@@ -70,19 +75,34 @@ export default function MovieModal({ movie, onClose }) {
 
     useEffect(() => {
         const loadRecommended = async () => {
-            const data = await fetchRecommendedMovies(movie.id);
-            setRecommendedMovies(data.results.slice(0, 15));
+            const data = await fetchRecommendedMovies(movie.id, recommendedPages);
+            setRecommendedMovies(data.results);
+            setRecomendedTotalPages(data.total_pages);
         };
         loadRecommended()
-    }, [movie]);
+    }, [movie, recommendedPages]);
 
     useEffect(() => {
         const loadSimilar = async () => {
-            const data = await fetchSimilarMovies(movie.id);
-            setSimilarMovie(data.results.slice(0, 15));
+            const data = await fetchSimilarMovies(movie.id, similarPages);
+            setSimilarMovie(data.results);
+            setSimilarTotalPages(data.total_pages);
         }
         loadSimilar()
+    }, [movie, similarPages]);
+
+    useEffect(() => {
+        setRecommendedPages(1);
+        setSimilarPages(1)
     }, [movie]);
+
+    useEffect(() => {
+        if (relatedToggle === "recommended"){
+            setRecommendedPages(1)
+        } else {
+            setSimilarPages(1)
+        }
+    }, [relatedToggle]);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 overflow-auto">
@@ -365,6 +385,12 @@ export default function MovieModal({ movie, onClose }) {
                                 </div>
                             ))}
                         </div>
+
+                        <Pagination
+                            currentPage={relatedToggle === "recommended" ? recommendedPages : similarPages}
+                            totalPages={relatedToggle === "recommended" ? recomendedTotalPages : similarTotalPages}
+                            onPageChange={relatedToggle === "recommended" ? setRecommendedPages : setSimilarPages}
+                        />
                     </div>
                 )}
 

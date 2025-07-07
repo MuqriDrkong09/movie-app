@@ -68,12 +68,12 @@ export const fetchPersonMovies = async (personId) => {
     return res.json();
 }
 
-export const fetchSimilarMovies = async (movieId) => {
-    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/similar?api_key=${API_KEY}`);
+export const fetchSimilarMovies = async (movieId, page = 1) => {
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/similar?api_key=${API_KEY}&page=${page}`);
     return res.json();
 };
 
-export const fetchRecommendedMovies = async (movieId) => {
-    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/recommendations?api_key=${API_KEY}`);
+export const fetchRecommendedMovies = async (movieId, page = 1) => {
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/recommendations?api_key=${API_KEY}&page=${page}`);
     return res.json();
 };
