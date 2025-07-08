@@ -19,6 +19,7 @@ function App() {
   const [filter, setFilter] = useState({ genreId: "", year: "" });
   const [showFilter, setShowFilter] = useState(false);
   const [liveResults, setLiveResults] = useState<any[]>([]);
+  const [filterResetSignal, setFilterResetSignal] = useState(false);
 
   useEffect(() => {
     const getMovies = async () => {
@@ -97,23 +98,25 @@ function App() {
         <div className="text-center text-gray-500 mt-8">No results found.</div>
       )}
 
-      {liveResults.length > 0 && mode === "search" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-          {liveResults.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              onClick={() => setSelectedMovies(movie)}
-            />
-          ))}
-        </div>
-      )}
-
       <div className="text-center mb-6">
         <button
           onClick={() => {
-            setShowFilter((prev) => !prev);
-            setMode("filter"); // make sure to switch mode to filter
+            setShowFilter((prev) => {
+              const newValue = !prev;
+
+              // When hiding the filter, reset it
+              if (!newValue) {
+                setFilter({ genreId: "", year: "" });
+                setFilterResetSignal(true);
+                setMode("tabs");
+                setCurrentPage(1);
+              } else {
+                setMode("filter");
+                setFilterResetSignal(false);
+              }
+
+              return newValue;
+            });
           }}
           className="px-4 py-2 bg-purple-500 text-white  rounded hover:bg-purple-600 "
         >
@@ -126,7 +129,11 @@ function App() {
       )}
 
       {showFilter && (
-        <FilterBar onFilter={handleFilter} onClear={handleClearFilter} />
+        <FilterBar
+          onFilter={handleFilter}
+          onClear={handleClearFilter}
+          resetSignal={filterResetSignal}
+        />
       )}
 
       {["search", "filter", "trending"].includes(mode) && (
@@ -138,6 +145,27 @@ function App() {
                 ? "🎯 Filtered Movies"
                 : "🎬 Trending Movies"}
           </h1>
+          {mode === "search" && liveResults.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {liveResults.map((movie) => (
+                <MovieCard
+                  key={movie.id}
+                  movie={movie}
+                  onClick={() => setSelectedMovies(movie)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {movies.map((movie) => (
+                <MovieCard
+                  key={movie.id}
+                  movie={movie}
+                  onClick={() => setSelectedMovies(movie)}
+                />
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {movies.map((movie) => (
               <MovieCard
